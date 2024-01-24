@@ -1,0 +1,35 @@
+import json
+import boto3
+from datetime import datetime
+
+kinesis_client = boto3.client('kinesis')
+
+def lambda_handler(event, context):
+    try:
+        records = []
+
+        for i in range(10):
+            data = {
+                'timestamp': datetime.utcnow().isoformat(),
+                'value': round((i + 1) * 10.5, 2)
+            }
+
+            params = {
+                'Data': json.dumps(data),
+                'PartitionKey': '1',
+                'StreamName': 'load_to_s3'
+            }
+
+            record = kinesis_client.put_record(**params)
+            records.append(record)
+
+        return {
+            'statusCode': 200,
+            'body': 'Data sent to Kinesis stream successfully!'
+        }
+    except Exception as e:
+        print('Error:', str(e))
+        return {
+            'statusCode': 500,
+            'body': 'Error sending data to Kinesis stream.'
+        }
