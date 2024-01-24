@@ -1,0 +1,36 @@
+import json
+import boto3
+from base64 import b64decode
+
+s3_client = boto3.client('s3')
+
+def lambda_handler(event, context):
+    try:
+        records = event['Records']
+
+        for record in records:
+            payload = json.loads(b64decode(record['kinesis']['data']).decode('utf-8'))
+
+            # Modify the following code to specify your S3 bucket and key
+            bucket_name = 'kinesispandc'
+            key = f"{payload['timestamp']}.json"
+
+            params = {
+                'Bucket': bucket_name,
+                'Key': key,
+                'Body': json.dumps(payload),
+                'ContentType': 'application/json'
+            }
+
+            s3_client.put_object(**params)
+
+        return {
+            'statusCode': 200,
+            'body': 'Data written to S3 successfully!'
+        }
+    except Exception as e:
+        print('Error:', str(e))
+        return {
+            'statusCode': 500,
+            'body': 'Error processing Kinesis records and writing to S3.'
+        }
